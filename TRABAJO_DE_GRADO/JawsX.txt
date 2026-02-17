@@ -1,0 +1,40 @@
+# Jaws for Siemens Oncor: Uses TOPAS component Jaws
+# Reference for geometry: Jabbari et al, J Med Signal Sens 3(3):172-179
+
+############################# Parameter Descriptions #################################
+# The parameters in Jaws.txt are intended as defaults to be adjusted in higher level
+# parameter control files FullTxHead.txt or Field.txt
+#
+# Parameters available for adjustment...
+# SourceToUpstreamSurfaceDistance: Distance from x-ray target to jaw
+# Jaw/RotZ: Jaw orientation, dependent on direction of jaw travel along IEC_B
+# NegativeFieldSetting: NegativeFieldSetting <= PositiveFieldSetting (IEC X1)
+# PositiveFieldSetting: Positive jaw position projected to isocenter (IEC X2) 
+#
+# Parameters calculated from other parameters...
+# SAD: Source axis distance (nominal distance from x-ray target to gantry rotation axis)
+#######################################################################################
+
+includeFile = LinacDefaults.txt #Values in LinacDafaults.txt may be overriden
+
+d:Ge/JawX/NegativeFieldSetting  = -10 cm #Field setting along negative IEC_B axis
+d:Ge/JawX/PositiveFieldSetting  = 10 cm #Field setting along positive IEC_B axis
+d:Ge/JawX/JawRotZforTravelAlongIECX = 0. deg # Constant for jaw travel along IEC X axis – DO NOT CHANGE
+d:Ge/JawX/JawRotZforTravelAlongIECY = -90. deg # Constant for jaw travel along IEC Y axis – DO NOT CHANGE
+d:Ge/JawX/RotZ = Ge/JawX/JawRotZforTravelAlongIECX deg # Set to JawRotZforTravelAlongIECX or JawRotZforTravelAlongIECY
+
+s:Ge/JawX/Parent         = "World"
+s:Ge/JawX/Type           = "TsJaws"
+s:Ge/JawX/Material       = "G4_W"
+
+d:Ge/JawX/LX             = 18. cm  # Actual jaw width along JawTravelAxis
+d:Ge/JawX/LY             = 32 cm  # Actual jaw length perpendicular to JawTravelAxis
+d:Ge/JawX/LZ             = 8 cm # Jaw thickness along IEC Zb axis
+d:Ge/JawX/SourceToUpstreamSurfaceDistance = 44. cm #Distance from x-ray target to jaw 
+d:Ge/JawX/SAD        	= Ge/SAD cm
+
+d:Ge/JawX/DistSourceToSAD = Ge/JawX/SAD - Ge/JawX/SourceToUpstreamSurfaceDistance cm
+d:Ge/JawX/HalfThickness = 0.5 * Ge/JawX/LZ cm
+d:Ge/JawX/TransZ = Ge/JawX/DistSourceToSAD - Ge/JawX/HalfThickness cm
+
+s:Ge/JawX/DrawingStyle   = "Solid"

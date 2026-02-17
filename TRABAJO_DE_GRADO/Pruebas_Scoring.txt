@@ -1,0 +1,115 @@
+# =================================================================
+# ARCHIVO DE PARÁMETROS - Rayos X producidos por LINAC Varian TrueBeam 6MV basado en el ejemplo "MVLinac" y usando espacios de fase
+# =================================================================
+
+# -----------------------------------------------------------------
+# INCLUDES - Archivos de parámetros externos
+
+## Jaws:
+#includeFile = JawsX.txt JawsY.txt
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# DEFINICIÓN DEL WORLD Y PARÁMETROS GRÁFICOS
+
+## World:
+s:Ge/World/Material         = "Air"
+d:Ge/World/HLX              = 1.5 m
+d:Ge/World/HLY              = 1.5 m
+d:Ge/World/HLZ              = 1.5 m
+b:Ge/World/Invisible        = "True"
+
+## Gráficos:
+iv:Gr/Color/TransparentRed  = 4 255 0 255 200
+iv:Gr/Color/TransparentBlue = 4 0 0 255 200
+
+s:Gr/ViewA/Type              = "OpenGL"
+i:Gr/ViewA/WindowSizeX       = 1600
+i:Gr/ViewA/WindowSizeY       = 900
+d:Gr/ViewA/Theta    = 90 deg
+d:Gr/ViewA/Phi      = 0 deg
+u:Gr/ViewA/Zoom     = 1.0
+# Axes: bigger + centered on the water cube
+b:Gr/ViewA/IncludeAxes       = "True"
+s:Gr/ViewA/AxesComponent     = "World"
+d:Gr/ViewA/AxesSize          = 1. m
+
+# Camera centered on the water cube (optional but usually helps a lot)
+s:Gr/ViewA/CenterOn          = "CapaAgua"
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# DEFINICIÓN DEL VOLUMEN IRRADIADO - FANTOMA DE AGUA + CAPA DE AIRE
+
+## Voxel de scoring:
+
+# Layer 2 - Agua
+s:Ge/CapaAgua/Type = "TsBox"
+s:Ge/CapaAgua/Parent = "World"
+d:Ge/CapaAgua/HLX = 15. cm
+d:Ge/CapaAgua/HLY = 15. cm
+d:Ge/CapaAgua/HLZ = 15. cm
+d:Ge/CapaAgua/TransZ = 115. cm
+s:Ge/CapaAgua/Material = "G4_WATER"
+s:Ge/CapaAgua/Color = "lightblue"
+## --- Water cube drawing style toggle (comment/uncomment) ---
+s:Ge/CapaAgua/DrawingStyle = "Solid"      # solid filled appearance
+#s:Ge/CapaAgua/DrawingStyle = "Wireframe" # wireframe alternative
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# PARÁMETROS GEOMÉTRICOS DEL CAMPO DE RADIACIÓN
+
+## SAD:
+d:Ge/SAD = 100. cm
+
+## Aperturas (proyectadas al isocentro) para un campo cuadrado de 10x10 cm mediante mordazas:
+d:Ge/JawX/NegativeFieldSetting = -6.1 cm
+d:Ge/JawX/PositiveFieldSetting = 6.1 cm
+d:Ge/JawY/NegativeFieldSetting = -4.6 cm
+d:Ge/JawY/PositiveFieldSetting = 4.5 cm
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# FUENTE/CAMPO DE RAYOS X (tomado de los archivos de espacio de fase del NDS de la IAEA) 
+
+## IMPORTANTE!: Antes de ejecutar el código, verificar que los archivos de parámetros estén en formato .header y .phsp
+## La NDS brinda estos archivos en formato .IAEAheader y .IAEAphsp, el cual no es codificable por TOPAS
+## PhaseSpaceFileName se da SIN extensión; TOPAS buscará .header/.phsp emparejados
+## Para PHSP que tienen varias partes, se puede repetir con PhaseSpaceMultipleUse>0
+
+## Espacio de fase:
+s:So/IAEA/Type               = "PhaseSpace"
+s:So/IAEA/PhaseSpaceFileName = "../NDS-IAEA/Varian_TrueBeam_6MV/Varian_TrueBeam6MV_01" 
+s:So/IAEA/Component          = "World"  # Usa las coords del World
+i:So/IAEA/PhaseSpaceMultipleUse = 0 # =0 una lectura del PHSP; >0 repite N veces la lectura del PHSP
+
+## PreCheck (cuenta histories y verifica flags de "New History"):
+b:So/IAEA/PhaseSpacePreCheck              = "False"
+i:So/IAEA/PreCheckShowParticleCountAtInterval = 10
+
+## Control de la simulación:
+
+i:So/IAEA/NumberOfHistoriesInRun = 400
+b:So/IAEA/LimitedAssumeFirstParticleIsaNewHistory = "True"
+b:So/IAEA/LimitedAssumeEveryParticleIsNewHistory = "True"
+b:So/IAEA/LimitedAssumePhotonIsNewHistory = "True"
+# -----------------------------------------------------------------
+
+
+# -----------------------------------------------------------------
+# FÍSICA, SALIDA, VERBOSIDAD Y CONTROL GENERAL DE TOPAS
+
+sv:Ph/Default/Modules = 1 "g4em-standard_opt4"
+
+i:Ts/ShowHistoryCountAtInterval = 100000
+#b:Gr/Enable = "False"
+b:Gr/Enable = "True"
+#b:Ts/UseQt = "False"
+b:Ts/UseQt = "True"
+
+i:Ts/NumberOfThreads = 6 # Change to 0 to use all available threads
+b:Ts/ShowCPUTime = "True"
+#b:Ts/PauseBeforeQuit = "False"  # Cambiar a "True" cuando se ejecute la visualización
+# ----------------------------------------------------------------
+

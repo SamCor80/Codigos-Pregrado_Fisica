@@ -1,0 +1,281 @@
+# =================================================================
+# ARCHIVO DE PARÁMETROS - Rayos X producidos por LINAC Varian TrueBeam 6MV basado en el ejemplo "MVLinac" y usando espacios de fase
+# =================================================================
+
+# -----------------------------------------------------------------
+# INCLUDES - Archivos de parámetros externos
+
+## Jaws:
+includeFile = JawsX.txt JawsY.txt
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# DEFINICIÓN DEL WORLD Y PARÁMETROS GRÁFICOS
+
+## World:
+s:Ge/World/Material         = "Air"
+d:Ge/World/HLX              = 1.5 m
+d:Ge/World/HLY              = 1.5 m
+d:Ge/World/HLZ              = 1.5 m
+b:Ge/World/Invisible        = "True"
+
+## Gráficos:
+iv:Gr/Color/TransparentRed  = 4 255 0 255 200
+iv:Gr/Color/TransparentBlue = 4 0 0 255 200
+s:Gr/ViewA/Type              = "OpenGL"
+i:Gr/ViewA/WindowSizeX       = 1400
+i:Gr/ViewA/WindowSizeY       = 700
+u:Gr/ViewA/Zoom              = 1.0
+d:Gr/ViewA/Theta             = 89 deg
+d:Gr/ViewA/Phi               = -90 deg
+b:Gr/ViewA/IncludeAxes       = "True"
+d:Gr/ViewA/AxesSize          = 10 cm
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# DEFINICIÓN DEL VOLUMEN IRRADIADO - FANTOMA DE AGUA + CAPA DE AIRE
+
+## Voxel de scoring:
+
+# Layer 1 - Aire
+s:Ge/CapaAire/Type = "TsBox"
+s:Ge/CapaAire/Parent = "World"
+d:Ge/CapaAire/HLX = 15. cm
+d:Ge/CapaAire/HLY = 15. cm
+d:Ge/CapaAire/HLZ = 1. cm
+d:Ge/CapaAire/TransZ = 99. cm
+s:Ge/CapaAire/Material = "Air"
+s:Ge/CapaAire/Color = "skyblue"
+
+# Layer 2 - Agua
+s:Ge/CapaAgua/Type = "TsBox"
+s:Ge/CapaAgua/Parent = "World"
+d:Ge/CapaAgua/HLX = 15. cm
+d:Ge/CapaAgua/HLY = 15. cm
+d:Ge/CapaAgua/HLZ = 15. cm
+d:Ge/CapaAgua/TransZ = 115. cm
+s:Ge/CapaAgua/Material = "G4_WATER"
+s:Ge/CapaAgua/Color = "blue"
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# PARÁMETROS GEOMÉTRICOS DEL CAMPO DE RADIACIÓN
+
+## SAD:
+d:Ge/SAD = 100. cm
+
+## Aperturas (proyectadas al isocentro) para un campo cuadrado de 10x10 cm mediante mordazas:
+d:Ge/JawX/NegativeFieldSetting = -6.1 cm
+d:Ge/JawX/PositiveFieldSetting = 6.1 cm
+d:Ge/JawY/NegativeFieldSetting = -4.6 cm
+d:Ge/JawY/PositiveFieldSetting = 4.5 cm
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# FUENTE/CAMPO DE RAYOS X (tomado de los archivos de espacio de fase del NDS de la IAEA) 
+
+## IMPORTANTE!: Antes de ejecutar el código, verificar que los archivos de parámetros estén en formato .header y .phsp
+## La NDS brinda estos archivos en formato .IAEAheader y .IAEAphsp, el cual no es codificable por TOPAS
+## PhaseSpaceFileName se da SIN extensión; TOPAS buscará .header/.phsp emparejados
+## Para PHSP que tienen varias partes, se puede repetir con PhaseSpaceMultipleUse>0
+
+## Espacio de fase:
+s:So/IAEA/Type               = "PhaseSpace"
+s:So/IAEA/PhaseSpaceFileName = "../NDS-IAEA/Varian_TrueBeam_6MV/Varian_TrueBeam6MV_06" 
+s:So/IAEA/Component          = "World"  # Usa las coords del World
+i:So/IAEA/PhaseSpaceMultipleUse = 0 # =0 una lectura del PHSP; >0 repite N veces la lectura del PHSP
+
+## PreCheck (cuenta histories y verifica flags de "New History"):
+b:So/IAEA/PhaseSpacePreCheck              = "False"
+i:So/IAEA/PreCheckShowParticleCountAtInterval = 10000
+
+## Control de la simulación:
+
+i:So/IAEA/NumberOfHistoriesInRun = 400000000
+b:So/IAEA/LimitedAssumeFirstParticleIsaNewHistory = "True"
+b:So/IAEA/LimitedAssumeEveryParticleIsNewHistory = "True"
+b:So/IAEA/LimitedAssumePhotonIsNewHistory = "True"
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# PUNTUACIÓN - SCORING
+
+## Se añaden dos volúmenes "auxiliares" para PDD y "superficie" en un ParallelWorld (llamado 'ScoringWorld'):
+#  - Un eje central 1x1xNz para dosis a profundidad
+#  - Una lámina superficial delgada Nx x Ny x 1 para mapa 2D
+## Nota geométrica: Según el header del espacio de fase, el "volumen" donde se ubican las partículas está entre los 17 y 22 cm a lo largo del eje z. El target se ubica en el punto (0,0,0) de las coordenadas del World, y el campo de radiación apunta en dirección +z. Por lo tanto, el fantoma debe ubicarse considerando esta geometría de la fuente
+
+## Porcentajes de dosis a profundidad - PDD
+
+# Línea de PDD (1 x 1 x Nz) dentro del agua:
+s:Ge/PDDLine/Type      = "TsBox"
+s:Ge/PDDLine/Parent    = "World"
+b:Ge/PDDLine/IsParallel	= "True"  
+s:Ge/PDDLine/ParallelWorldName = "ScoringWorld_PDD"
+d:Ge/PDDLine/HLX       = 15. cm
+d:Ge/PDDLine/HLY       = 15. cm
+d:Ge/PDDLine/HLZ       = 16. cm  # Cambiar este volumen conforme se cambia el espesor del volumen de aire por encima del fantoma
+d:Ge/PDDLine/TransX    = 0.0 cm
+d:Ge/PDDLine/TransY    = 0.0 cm
+d:Ge/PDDLine/TransZ    = 114.0 cm  # Centra para que empiece ~en superficie
+b:Ge/PDDLine/IsVolumetricallyDivided = "True"
+i:Ge/PDDLine/ZBins	= 320
+# Scorer Dosis en el medio (DoseToMedium) sobre PDDLine, reporta CSV sum
+s:Sc/PDD_Medium/Quantity      = "DoseToMedium"
+s:Sc/PDD_Medium/Component     = "PDDLine"
+s:Sc/PDD_Medium/OutputFile    = "DosisAProfundidad_06"
+s:Sc/PDD_Medium/IfOutputFileAlreadyExists = "Overwrite"
+sv:Sc/PDD_Medium/Report       = 1 "Sum"
+
+## Perfiles transversales en X a distintas profundidades: 0.1, 0.5, 5, 10, 20 cm
+
+# 0.1 cm:
+
+s:Ge/PerfilX_01/Type = "TsBox"
+s:Ge/PerfilX_01/Parent = "World"
+b:Ge/PerfilX_01/IsParallel = "True"
+s:Ge/PerfilX_01/ParallelWorldName = "ScoringWorld_Perfil"
+# Dimensiones del perfil
+d:Ge/PerfilX_01/HLX = 15. cm
+d:Ge/PerfilX_01/HLY = 1. cm
+d:Ge/PerfilX_01/HLZ = 0.05 cm
+d:Ge/PerfilX_01/TransX = 0. cm
+d:Ge/PerfilX_01/TransY = 0. cm
+d:Ge/PerfilX_01/TransZ = 100.1 cm
+b:Ge/PerfilX_01/IsVolumetricallyDivided = "True"
+i:Ge/PerfilX_01/XBins = 100
+# Scorer Dosis en el medio (DoseToMedium) sobre PerfilX_01, reporta CSV sum
+s:Sc/PerfilX_01/Quantity = "DoseToMedium"
+s:Sc/PerfilX_01/Component = "PerfilX_01"
+s:Sc/PerfilX_01/OutputFile = "Perfil01cm_06"
+s:Sc/PerfilX_01/IfOutputFileAlreadyExists = "Overwrite"
+sv:Sc/PerfilX_01/Report = 1 "Sum"
+
+# 0.5 cm:
+
+s:Ge/PerfilX_05/Type = "TsBox"
+s:Ge/PerfilX_05/Parent = "World"
+b:Ge/PerfilX_05/IsParallel = "True"
+s:Ge/PerfilX_05/ParallelWorldName = "ScoringWorld_Perfil"
+# Dimensiones del perfil
+d:Ge/PerfilX_05/HLX = 15. cm
+d:Ge/PerfilX_05/HLY = 1. cm
+d:Ge/PerfilX_05/HLZ = 0.05 cm
+d:Ge/PerfilX_05/TransX = 0. cm
+d:Ge/PerfilX_05/TransY = 0. cm
+d:Ge/PerfilX_05/TransZ = 100.5 cm
+b:Ge/PerfilX_05/IsVolumetricallyDivided = "True"
+i:Ge/PerfilX_05/XBins = 100
+# Scorer Dosis en el medio (DoseToMedium) sobre PerfilX_01, reporta CSV sum
+s:Sc/PerfilX_05/Quantity = "DoseToMedium"
+s:Sc/PerfilX_05/Component = "PerfilX_05"
+s:Sc/PerfilX_05/OutputFile = "Perfil05cm_06"
+s:Sc/PerfilX_05/IfOutputFileAlreadyExists = "Overwrite"
+sv:Sc/PerfilX_05/Report = 1 "Sum"
+
+# 5 cm:
+
+s:Ge/PerfilX_5/Type = "TsBox"
+s:Ge/PerfilX_5/Parent = "World"
+b:Ge/PerfilX_5/IsParallel = "True"
+s:Ge/PerfilX_5/ParallelWorldName = "ScoringWorld_Perfil"
+# Dimensiones del perfil
+d:Ge/PerfilX_5/HLX = 15. cm
+d:Ge/PerfilX_5/HLY = 1. cm
+d:Ge/PerfilX_5/HLZ = 0.05 cm
+d:Ge/PerfilX_5/TransX = 0. cm
+d:Ge/PerfilX_5/TransY = 0. cm
+d:Ge/PerfilX_5/TransZ = 105. cm
+b:Ge/PerfilX_5/IsVolumetricallyDivided = "True"
+i:Ge/PerfilX_5/XBins = 100
+# Scorer Dosis en el medio (DoseToMedium) sobre PerfilX_01, reporta CSV sum
+s:Sc/PerfilX_5/Quantity = "DoseToMedium"
+s:Sc/PerfilX_5/Component = "PerfilX_5"
+s:Sc/PerfilX_5/OutputFile = "Perfil5cm_06"
+s:Sc/PerfilX_5/IfOutputFileAlreadyExists = "Overwrite"
+sv:Sc/PerfilX_5/Report = 1 "Sum"
+
+# 10 cm:
+
+s:Ge/PerfilX_10/Type = "TsBox"
+s:Ge/PerfilX_10/Parent = "World"
+b:Ge/PerfilX_10/IsParallel = "True"
+s:Ge/PerfilX_10/ParallelWorldName = "ScoringWorld_Perfil"
+# Dimensiones del perfil
+d:Ge/PerfilX_10/HLX = 15. cm
+d:Ge/PerfilX_10/HLY = 1. cm
+d:Ge/PerfilX_10/HLZ = 0.05 cm
+d:Ge/PerfilX_10/TransX = 0. cm
+d:Ge/PerfilX_10/TransY = 0. cm
+d:Ge/PerfilX_10/TransZ = 110. cm
+b:Ge/PerfilX_10/IsVolumetricallyDivided = "True"
+i:Ge/PerfilX_10/XBins = 100
+# Scorer Dosis en el medio (DoseToMedium) sobre PerfilX_01, reporta CSV sum
+s:Sc/PerfilX_10/Quantity = "DoseToMedium"
+s:Sc/PerfilX_10/Component = "PerfilX_10"
+s:Sc/PerfilX_10/OutputFile = "Perfil10cm_06"
+s:Sc/PerfilX_10/IfOutputFileAlreadyExists = "Overwrite"
+sv:Sc/PerfilX_10/Report = 1 "Sum"
+
+# 20 cm:
+
+s:Ge/PerfilX_20/Type = "TsBox"
+s:Ge/PerfilX_20/Parent = "World"
+b:Ge/PerfilX_20/IsParallel = "True"
+s:Ge/PerfilX_20/ParallelWorldName = "ScoringWorld_Perfil"
+# Dimensiones del perfil
+d:Ge/PerfilX_20/HLX = 15. cm
+d:Ge/PerfilX_20/HLY = 1. cm
+d:Ge/PerfilX_20/HLZ = 0.05 cm
+d:Ge/PerfilX_20/TransX = 0. cm
+d:Ge/PerfilX_20/TransY = 0. cm
+d:Ge/PerfilX_20/TransZ = 120. cm
+b:Ge/PerfilX_20/IsVolumetricallyDivided = "True"
+i:Ge/PerfilX_20/XBins = 100
+# Scorer Dosis en el medio (DoseToMedium) sobre PerfilX_01, reporta CSV sum
+s:Sc/PerfilX_20/Quantity = "DoseToMedium"
+s:Sc/PerfilX_20/Component = "PerfilX_20"
+s:Sc/PerfilX_20/OutputFile = "Perfil20cm_06"
+s:Sc/PerfilX_20/IfOutputFileAlreadyExists = "Overwrite"
+sv:Sc/PerfilX_20/Report = 1 "Sum"
+
+## Mapa de dosis 2D en la superficie 
+
+s:Ge/SurfMap/Type = "TsBox"
+s:Ge/SurfMap/Parent  = "World"
+b:Ge/SurfMap/IsParallel = "True"
+s:Ge/SurfMap/ParallelWorldName = "ScoringWorld_Mapa"
+# Dimensiones del mapa superficial
+d:Ge/SurfMap/HLX = 15. cm
+d:Ge/SurfMap/HLY = 15. cm
+d:Ge/SurfMap/HLZ = 0.25 cm
+d:Ge/SurfMap/TransX = 0. cm
+d:Ge/SurfMap/TransY = 0. cm
+d:Ge/SurfMap/TransZ = 100.25 cm
+b:Ge/SurfMap/IsVolumetricallyDivided = "True"
+i:Ge/SurfMap/XBins = 100
+i:Ge/SurfMap/YBins = 100
+# Scorer Dosis en el medio (DoseToMedium) sobre SurfMap, reporta CSV sum
+s:Sc/SurfDose/Quantity = "DoseToMedium"
+s:Sc/SurfDose/Component = "SurfMap"
+s:Sc/SurfDose/OutputFile = "MapaSuperficial_06"
+s:Sc/SurfDose/IfOutputFileAlreadyExists = "Overwrite"
+sv:Sc/SurfDose/Report = 1 "Sum"
+
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# FÍSICA, SALIDA, VERBOSIDAD Y CONTROL GENERAL DE TOPAS
+
+sv:Ph/Default/Modules = 1 "g4em-standard_opt4"
+
+i:Ts/ShowHistoryCountAtInterval = 10000
+b:Gr/Enable = "False"
+#b:Gr/Enable = "True"
+b:Ts/UseQt = "False"
+#b:Ts/UseQt = "True"
+
+i:Ts/NumberOfThreads = 6 # Change to 0 to use all available threads
+b:Ts/ShowCPUTime = "True"
+#b:Ts/PauseBeforeQuit = "False"  # Cambiar a "True" cuando se ejecute la visualización
+# ----------------------------------------------------------------
